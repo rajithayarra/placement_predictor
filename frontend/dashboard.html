@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Placement Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .dashboard-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+        .navbar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+        .profile-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .prediction-form {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .result-card {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <div class="dashboard-container">
+        <!-- Navigation Bar -->
+        <nav class="navbar navbar-custom">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1 text-white">
+                    🎓 Placement Readiness Dashboard
+                </span>
+                <div class="d-flex align-items-center">
+                    <span id="studentName" class="text-white me-3"></span>
+                    <button id="logoutBtn" class="btn btn-outline-light btn-sm">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Student Profile Info -->
+        <div id="profileSection" class="profile-info" style="display: none;">
+            <h4 class="mb-3">👤 Student Profile</h4>
+            <div class="row">
+                <div class="col-md-4">
+                    <p><strong>Name:</strong> <span id="profileName"></span></p>
+                    <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+                    <p><strong>Phone:</strong> <span id="profilePhone"></span></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>10th %:</strong> <span id="profileTenth"></span></p>
+                    <p><strong>Intermediate %:</strong> <span id="profileInter"></span></p>
+                    <p><strong>CGPA:</strong> <span id="profileCgpa"></span></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Coding:</strong> <span id="profileCoding"></span></p>
+                    <p><strong>DSA:</strong> <span id="profileDsa"></span></p>
+                    <p><strong>Projects:</strong> <span id="profileProjects"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Required Message -->
+        <div id="loginRequired" class="text-center py-5" style="display: none;">
+            <h3 class="text-danger">⚠️ Login Required</h3>
+            <p>Please login to access the placement dashboard.</p>
+            <a href="/login" class="btn btn-primary">Go to Login</a>
+        </div>
+
+        <!-- Prediction Form -->
+        <div id="predictionSection">
+            <h4 class="mb-3">🎯 Placement Prediction</h4>
+            <form id="placementForm" class="prediction-form">
+
+                <!-- Academic Scores -->
+                <div class="row mb-3">
+                    <div class="col"><input type="number" step="0.01" id="tenth_percentage" placeholder="10th Percentage" class="form-control" required></div>
+                    <div class="col"><input type="number" step="0.01" id="inter_percentage" placeholder="Intermediate Percentage" class="form-control" required></div>
+                    <div class="col"><input type="number" step="0.01" id="cgpa" placeholder="CGPA" class="form-control" required></div>
+                </div>
+
+                <!-- Skills & Experience -->
+                <div class="row mb-3">
+                    <div class="col"><input type="number" id="coding_score" placeholder="Coding Score" class="form-control" required></div>
+                    <div class="col"><input type="number" id="dsa_score" placeholder="DSA Score" class="form-control" required></div>
+                    <div class="col"><input type="number" id="projects_count" placeholder="Projects Count" class="form-control" required></div>
+                    <div class="col"><input type="number" id="internships" placeholder="Internships" class="form-control" required></div>
+                </div>
+
+                <!-- Aptitude & Communication -->
+                <div class="row mb-3">
+                    <div class="col"><input type="number" id="aptitude_score" placeholder="Aptitude Score" class="form-control" required></div>
+                    <div class="col"><input type="number" id="communication_skill" placeholder="Communication Skill" class="form-control" required></div>
+                    <div class="col"><input type="number" id="mock_interview_score" placeholder="Mock Interview Score" class="form-control" required></div>
+                    <div class="col"><input type="number" id="certifications" placeholder="Certifications" class="form-control" required></div>
+                </div>
+
+                <button type="button" onclick="predictPlacement()" class="btn btn-primary w-100 mb-2">Predict Placement</button>
+                <button type="button" onclick="saveProfile()" class="btn btn-success w-100">Save Profile</button>
+            </form>
+
+            <div id="result" class="mt-4"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Check login status and load profile
+window.addEventListener('load', async function() {
+    const student = localStorage.getItem('student');
+    
+    if (!student) {
+        // Show login required message
+        document.getElementById('loginRequired').style.display = 'block';
+        document.getElementById('predictionSection').style.display = 'none';
+        document.getElementById('profileSection').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('studentName').style.display = 'none';
+    } else {
+        // Show student info and load profile
+        const studentData = JSON.parse(student);
+        document.getElementById('studentName').textContent = `Welcome, ${studentData.name}`;
+        document.getElementById('loginRequired').style.display = 'none';
+        document.getElementById('predictionSection').style.display = 'block';
+        document.getElementById('logoutBtn').style.display = 'block';
+        document.getElementById('studentName').style.display = 'block';
+        
+        // Load full profile data
+        await loadProfile();
+    }
+});
+
+// Load student profile
+async function loadProfile() {
+    try {
+        const response = await fetch('/profile');
+        const result = await response.json();
+        
+        if (response.ok) {
+            const student = result.student;
+            
+            // Update profile section
+            document.getElementById('profileName').textContent = student.name;
+            document.getElementById('profileEmail').textContent = student.email;
+            document.getElementById('profilePhone').textContent = student.phone || 'Not provided';
+            document.getElementById('profileTenth').textContent = student.tenth_percentage > 0 ? student.tenth_percentage + '%' : 'Not provided';
+            document.getElementById('profileInter').textContent = student.inter_percentage > 0 ? student.inter_percentage + '%' : 'Not provided';
+            document.getElementById('profileCgpa').textContent = student.cgpa > 0 ? student.cgpa : 'Not provided';
+            document.getElementById('profileCoding').textContent = student.coding_score > 0 ? student.coding_score : 'Not provided';
+            document.getElementById('profileDsa').textContent = student.dsa_score > 0 ? student.dsa_score : 'Not provided';
+            document.getElementById('profileProjects').textContent = student.projects_count > 0 ? student.projects_count : 'Not provided';
+            
+            // Show profile section
+            document.getElementById('profileSection').style.display = 'block';
+            
+            // Fill form with profile data (only if not zero)
+            document.getElementById('tenth_percentage').value = student.tenth_percentage > 0 ? student.tenth_percentage : '';
+            document.getElementById('inter_percentage').value = student.inter_percentage > 0 ? student.inter_percentage : '';
+            document.getElementById('cgpa').value = student.cgpa > 0 ? student.cgpa : '';
+            document.getElementById('coding_score').value = student.coding_score > 0 ? student.coding_score : '';
+            document.getElementById('dsa_score').value = student.dsa_score > 0 ? student.dsa_score : '';
+            document.getElementById('projects_count').value = student.projects_count > 0 ? student.projects_count : '';
+            document.getElementById('internships').value = student.internships > 0 ? student.internships : '';
+            document.getElementById('aptitude_score').value = student.aptitude_score > 0 ? student.aptitude_score : '';
+            document.getElementById('communication_skill').value = student.communication_skill > 0 ? student.communication_skill : '';
+            document.getElementById('mock_interview_score').value = student.mock_interview_score > 0 ? student.mock_interview_score : '';
+            document.getElementById('certifications').value = student.certifications > 0 ? student.certifications : '';
+            
+        } else {
+            console.error('Profile load failed:', result.error);
+        }
+    } catch (error) {
+        console.error('Profile load error:', error);
+    }
+}
+
+// Logout functionality
+document.getElementById('logoutBtn').addEventListener('click', async function() {
+    try {
+        await fetch('/logout', { method: 'POST' });
+        localStorage.removeItem('student');
+        window.location.href = '/';
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Even if server logout fails, clear local storage
+        localStorage.removeItem('student');
+        window.location.href = '/';
+    }
+});
+
+// Save profile function
+async function saveProfile() {
+    const data = {
+        tenth_percentage: parseFloat(document.getElementById("tenth_percentage").value),
+        inter_percentage: parseFloat(document.getElementById("inter_percentage").value),
+        cgpa: parseFloat(document.getElementById("cgpa").value),
+        coding_score: parseInt(document.getElementById("coding_score").value),
+        dsa_score: parseInt(document.getElementById("dsa_score").value),
+        projects_count: parseInt(document.getElementById("projects_count").value),
+        internships: parseInt(document.getElementById("internships").value),
+        aptitude_score: parseInt(document.getElementById("aptitude_score").value),
+        communication_skill: parseInt(document.getElementById("communication_skill").value),
+        mock_interview_score: parseInt(document.getElementById("mock_interview_score").value),
+        certifications: parseInt(document.getElementById("certifications").value)
+    };
+
+    try {
+        const response = await fetch("/update_profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            document.getElementById("result").innerHTML = `
+                <div class="alert alert-success">
+                    <strong>Success!</strong> ${result.message}
+                </div>
+            `;
+        } else {
+            document.getElementById("result").innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Error!</strong> ${result.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        document.getElementById("result").innerHTML = `
+            <div class="alert alert-danger">
+                <strong>Error!</strong> Profile update failed. Please try again.
+            </div>
+        `;
+        console.error('Profile update error:', error);
+    }
+}
+
+// Prediction function
+async function predictPlacement() {
+    const data = {
+        tenth_percentage: parseFloat(document.getElementById("tenth_percentage").value),
+        inter_percentage: parseFloat(document.getElementById("inter_percentage").value),
+        cgpa: parseFloat(document.getElementById("cgpa").value),
+        coding_score: parseInt(document.getElementById("coding_score").value),
+        dsa_score: parseInt(document.getElementById("dsa_score").value),
+        projects_count: parseInt(document.getElementById("projects_count").value),
+        internships: parseInt(document.getElementById("internships").value),
+        aptitude_score: parseInt(document.getElementById("aptitude_score").value),
+        communication_skill: parseInt(document.getElementById("communication_skill").value),
+        mock_interview_score: parseInt(document.getElementById("mock_interview_score").value),
+        certifications: parseInt(document.getElementById("certifications").value)
+    };
+
+    try {
+        const response = await fetch("/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+        const result = await response.json();
+
+        // Determine result color based on probability
+        let resultClass = 'result-card';
+        if (result.placement_probability < 50) {
+            resultClass = 'alert-danger';
+        } else if (result.placement_probability < 75) {
+            resultClass = 'alert-warning';
+        } else {
+            resultClass = 'result-card';
+        }
+
+        document.getElementById("result").innerHTML = `
+            <div class="${resultClass} p-3">
+                <h3>🎯 Placement Probability: ${result.placement_probability}%</h3>
+                <p><strong>📉 Weak Skills:</strong> ${result.weak_skills.join(", ")}</p>
+                <p><strong>💡 Suggestions:</strong></p>
+                <ul>${result.suggestions.map(s => `<li>${s}</li>`).join("")}</ul>
+            </div>
+        `;
+    } catch (error) {
+        document.getElementById("result").innerHTML = `
+            <div class="alert alert-danger">
+                <strong>Error:</strong> ${error.message}
+            </div>
+        `;
+        console.error(error);
+    }
+}
+</script>
+</body>
+</html>
